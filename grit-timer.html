@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRIT // INTERVAL CORE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --c-bg:#08090b;
+    --c-bg2:#0d1013;
+    --c-panel:#13171a;
+    --c-panel2:#171c20;
+    --c-border:#262c31;
+    --c-border-soft:#1c2226;
+    --c-text:#e9eef1;
+    --c-dim:#7c8790;
+    --c-dim2:#4d565c;
+    --c-prep:#35c9ff;
+    --c-work:#ff4732;
+    --c-rest:#3ecf8e;
+    --c-done:#ffd23f;
+    --c-idle:#4d565c;
+    --phase-color: var(--c-idle);
+    --ring-circ: 565.48;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #12171b 0%, var(--c-bg) 60%);
+    color:var(--c-text);
+    font-family:'Rajdhani',sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    min-height:100vh;
+  }
+  .console{
+    width:100%;
+    max-width:560px;
+    background:linear-gradient(180deg,var(--c-panel) 0%, var(--c-bg2) 100%);
+    border:1px solid var(--c-border);
+    border-radius:14px;
+    box-shadow:0 30px 80px -30px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.03);
+    overflow:hidden;
+  }
+  /* ---- top bar ---- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 18px 10px 18px;
+    border-bottom:1px solid var(--c-border-soft);
+  }
+  .brand{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .brand .corp{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    letter-spacing:2px;
+    color:var(--c-dim);
+    text-transform:uppercase;
+  }
+  .brand .title{
+    font-family:'Orbitron',sans-serif;
+    font-weight:800;
+    font-size:16px;
+    letter-spacing:1px;
+    color:var(--c-text);
+  }
+  .brand .title span{color:var(--c-work);}
+  .topbtns{display:flex;gap:8px;}
+  .iconbtn{
+    width:32px;height:32px;
+    border-radius:8px;
+    border:1px solid var(--c-border);
+    background:var(--c-panel2);
+    color:var(--c-dim);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    font-size:14px;
+    transition:all .15s ease;
+  }
+  .iconbtn:hover{color:var(--c-text);border-color:var(--c-dim2);}
+  .iconbtn.on{color:var(--c-work);border-color:var(--c-work);}
+
+  /* ---- session name strip ---- */
+  .sessionline{
+    padding:8px 18px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    letter-spacing:1px;
+    color:var(--c-dim);
+    text-transform:uppercase;
+    border-bottom:1px solid var(--c-border-soft);
+  }
+  .sessionline b{color:var(--c-text);font-weight:600;}
+
+  /* ---- mode tabs ---- */
+  .tabs{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:6px;
+    padding:14px 18px 0 18px;
+  }
+  .tab{
+    padding:9px 4px;
+    text-align:center;
+    font-family:'Rajdhani',sans-serif;
+    font-weight:700;
+    font-size:12px;
+    letter-spacing:0.5px;
+    border-radius:8px;
+    border:1px solid var(--c-border);
+    background:var(--c-panel2);
+    color:var(--c-dim);
+    cursor:pointer;
+    transition:all .15s ease;
+    user-select:none;
+  }
+  .tab:hover{color:var(--c-text);}
+  .tab.active{
+    background:rgba(255,71,50,0.12);
+    border-color:var(--c-work);
+    color:var(--c-text);
+  }
+
+  /* ---- presets ---- */
+  .presets{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    padding:12px 18px 0 18px;
+  }
+  .chip{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    letter-spacing:0.5px;
+    padding:6px 10px;
+    border-radius:20px;
+    border:1px dashed var(--c-border);
+    color:var(--c-dim);
+    cursor:pointer;
+    background:transparent;
+    transition:all .15s ease;
+  }
+  .chip:hover{border-color:var(--c-dim2);color:var(--c-text);}
+
+  /* ---- display ---- */
+  .display{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:22px 18px 6px 18px;
+  }
+  .phaselabel{
+    font-family:'Rajdhani',sans-serif;
+    font-weight:700;
+    font-size:14px;
+    letter-spacing:5px;
+    color:var(--phase-color);
+    text-transform:uppercase;
+    margin-bottom:10px;
+    height:18px;
+    transition:color .2s ease;
+  }
+  .ringwrap{
+    position:relative;
+    width:240px;
+    height:240px;
+  }
+  .ringwrap svg{
+    transform:rotate(-90deg);
+    width:100%;height:100%;
+  }
+  .ring-bg{fill:none;stroke:var(--c-border-soft);stroke-width:10;}
+  .ring-fg{
+    fill:none;
+    stroke:var(--phase-color);
+    stroke-width:10;
+    stroke-linecap:round;
+    stroke-dasharray:var(--ring-circ);
+    stroke-dashoffset:var(--ring-circ);
+    transition:stroke .2s ease, stroke-dashoffset .12s linear;
+    filter:drop-shadow(0 0 10px color-mix(in srgb, var(--phase-color) 55%, transparent));
+  }
+  .digits{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Orbitron',sans-serif;
+    font-weight:700;
+    font-size:42px;
+    letter-spacing:1px;
+    color:var(--c-text);
+  }
+  .digits.pulse{animation:pulse .5s ease;}
+  @keyframes pulse{0%{transform:scale(1);}30%{transform:scale(1.08);color:var(--phase-color);}100%{transform:scale(1);}}
+
+  .context{
+    margin-top:14px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    letter-spacing:1.5px;
+    color:var(--c-dim);
+    text-transform:uppercase;
+    min-height:16px;
+    text-align:center;
+  }
+
+  .roundrow{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:14px;
+  }
+  .roundcount{
+    font-family:'Orbitron',sans-serif;
+    font-size:13px;
+    color:var(--c-text);
+    background:var(--c-panel2);
+    border:1px solid var(--c-border);
+    padding:8px 14px;
+    border-radius:8px;
+  }
+  .btn-round{
+    font-family:'Rajdhani',sans-serif;
+    font-weight:700;
+    font-size:12px;
+    letter-spacing:1px;
+    padding:9px 14px;
+    border-radius:8px;
+    border:1px solid var(--c-rest);
+    background:rgba(62,207,142,0.12);
+    color:var(--c-rest);
+    cursor:pointer;
+  }
+  .btn-finish{
+    font-family:'Rajdhani',sans-serif;
+    font-weight:700;
+    font-size:12px;
+    letter-spacing:1px;
+    padding:9px 14px;
+    border-radius:8px;
+    border:1px solid var(--c-done);
+    background:rgba(255,210,63,0.12);
+    color:var(--c-done);
+    cursor:pointer;
+  }
+
+  /* ---- config ---- */
+  .config{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    padding:20px 18px 4px 18px;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    background:var(--c-panel2);
+    border:1px solid var(--c-border);
+    border-radius:10px;
+    padding:8px 10px;
+  }
+  .field label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:9px;
+    letter-spacing:1px;
+    color:var(--c-dim);
+    text-transform:uppercase;
+  }
+  .stepper{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .stepper button{
+    width:22px;height:22px;
+    border-radius:6px;
+    border:1px solid var(--c-border);
+    background:var(--c-bg2);
+    color:var(--c-dim);
+    font-size:13px;
+    cursor:pointer;
+    line-height:1;
+  }
+  .stepper button:hover{color:var(--c-text);}
+  .stepper input{
+    width:44px;
+    text-align:center;
+    background:transparent;
+    border:none;
+    color:var(--c-text);
+    font-family:'Orbitron',sans-serif;
+    font-size:14px;
+    -moz-appearance:textfield;
+  }
+  .stepper input::-webkit-outer-spin-button,
+  .stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+  .stepper input:focus{outline:none;}
+
+  /* ---- controls ---- */
+  .controls{
+    display:grid;
+    grid-template-columns:1fr 2fr;
+    gap:10px;
+    padding:18px;
+  }
+  .btn{
+    font-family:'Rajdhani',sans-serif;
+    font-weight:700;
+    font-size:15px;
+    letter-spacing:1px;
+    padding:14px;
+    border-radius:10px;
+    border:1px solid var(--c-border);
+    background:var(--c-panel2);
+    color:var(--c-text);
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .btn:hover{border-color:var(--c-dim2);}
+  .btn-primary{
+    background:linear-gradient(180deg, #ff5b42, #e8402c);
+    border-color:#ff5b42;
+    color:#0a0a0a;
+    box-shadow:0 8px 20px -8px rgba(255,71,50,0.6);
+  }
+  .btn-primary:hover{filter:brightness(1.06);}
+  .btn-primary.running{
+    background:linear-gradient(180deg, #2f353a, #1b2023);
+    color:var(--c-text);
+    box-shadow:none;
+  }
+
+  .footer{
+    text-align:center;
+    padding:0 18px 16px 18px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:9px;
+    letter-spacing:1.5px;
+    color:var(--c-dim2);
+    text-transform:uppercase;
+  }
+
+  [data-hide="true"]{display:none !important;}
+
+  @media (max-width:420px){
+    .ringwrap{width:200px;height:200px;}
+    .digits{font-size:34px;}
+    .config{grid-template-columns:repeat(2,1fr);}
+  }
+</style>
+</head>
+<body>
+
+<div class="console">
+  <div class="topbar">
+    <div class="brand">
+      <div class="corp">VANTEK&nbsp;·&nbsp;YAMURA&nbsp;CORP</div>
+      <div class="title">GRIT <span>//</span> INTERVAL CORE</div>
+    </div>
+    <div class="topbtns">
+      <div class="iconbtn on" id="soundBtn" title="Geluid aan/uit">&#128266;</div>
+      <div class="iconbtn" id="wakeBtn" title="Scherm actief houden">&#9728;</div>
+    </div>
+  </div>
+
+  <div class="sessionline">SESSIE: <b id="sessionName">CUSTOM</b></div>
+
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-mode="CUSTOM">CUSTOM</div>
+    <div class="tab" data-mode="EMOM">EMOM</div>
+    <div class="tab" data-mode="TABATA">TABATA</div>
+    <div class="tab" data-mode="AMRAP">AMRAP</div>
+    <div class="tab" data-mode="FORTIME">FOR TIME</div>
+  </div>
+
+  <div class="presets">
+    <button class="chip" data-preset="hoofdblok">HOOFDBLOK 4×5</button>
+    <button class="chip" data-preset="finisher">FINISHER AMRAP 8:00</button>
+    <button class="chip" data-preset="tabata">TABATA KLASSIEK</button>
+    <button class="chip" data-preset="emom10">EMOM 10:00</button>
+  </div>
+
+  <div class="display">
+    <div class="phaselabel" id="phaseLabel">KLAAR</div>
+    <div class="ringwrap">
+      <svg viewBox="0 0 200 200">
+        <circle class="ring-bg" cx="100" cy="100" r="90"></circle>
+        <circle class="ring-fg" id="ring" cx="100" cy="100" r="90"></circle>
+      </svg>
+      <div class="digits" id="digits">00:00</div>
+    </div>
+    <div class="context" id="context">Kies een modus of preset, stel in, en start</div>
+
+    <div class="roundrow" data-hide="true" id="roundRow">
+      <div class="roundcount">RONDES: <span id="roundCount">0</span></div>
+      <button class="btn-round" id="addRoundBtn">+ 1 RONDE</button>
+      <button class="btn-finish" data-hide="true" id="finishBtn">KLAAR</button>
+    </div>
+  </div>
+
+  <div class="config" id="config">
+    <div class="field" data-modes="EMOM,TABATA,CUSTOM,AMRAP,FORTIME">
+      <label>Prep (s)</label>
+      <div class="stepper">
+        <button data-field="prep" data-delta="-5">−</button>
+        <input id="f-prep" type="number" value="10">
+        <button data-field="prep" data-delta="5">+</button>
+      </div>
+    </div>
+
+    <div class="field" data-modes="EMOM">
+      <label>Sec / ronde</label>
+      <div class="stepper">
+        <button data-field="emomSec" data-delta="-5">−</button>
+        <input id="f-emomSec" type="number" value="60">
+        <button data-field="emomSec" data-delta="5">+</button>
+      </div>
+    </div>
+    <div class="field" data-modes="EMOM">
+      <label>Aantal rondes</label>
+      <div class="stepper">
+        <button data-field="emomRounds" data-delta="-1">−</button>
+        <input id="f-emomRounds" type="number" value="10">
+        <button data-field="emomRounds" data-delta="1">+</button>
+      </div>
+    </div>
+
+    <div class="field" data-modes="TABATA">
+      <label>Werk (s)</label>
+      <div class="stepper">
+        <button data-field="tabataWork" data-delta="-5">−</button>
+        <input id="f-tabataWork" type="number" value="20">
+        <button data-field="tabataWork" data-delta="5">+</button>
+      </div>
+    </div>
+    <div class="field" data-modes="TABATA">
+      <label>Rust (s)</label>
+      <div class="stepper">
+        <button data-field="tabataRest" data-delta="-5">−</button>
+        <input id="f-tabataRest" type="number" value="10">
+        <button data-field="tabataRest" data-delta="5">+</button>
+      </div>
+    </div>
+    <div class="field" data-modes="TABATA">
+      <label>Rondes</label>
+      <div class="stepper">
+        <button data-field="tabataRounds" data-delta="-1">−</button>
+        <input id="f-tabataRounds" type="number" value="8">
+        <button data-field="tabataRounds" data-delta="1">+</button>
+      </div>
+    </div>
+
+    <div class="field" data-modes="CUSTOM">
+      <label>Werk (s)</label>
+      <div class="stepper">
+        <button data-field="work" data-delta="-5">−</button>
+        <input id="f-work" type="number" value="45">
+        <button data-field="work" data-delta="5">+</button>
+      </div>
+    </div>
+    <div class="field" data-modes="CUSTOM">
+      <label>Wissel (s)</label>
+      <div class="stepper">
+        <button data-field="rest" data-delta="-5">−</button>
+        <input id="f-rest" type="number" value="15">
+        <button data-field="rest" data-delta="5">+</button>
+      </div>
+    </div>
+    <div class="field" data-modes="CUSTOM">
+      <label>Stations / ronde</label>
+      <div class="stepper">
+        <button data-field="stations" data-delta="-1">−</button>
+        <input id="f-stations" type="number" value="5">
+        <button data-field="stations" data-delta="1">+</button>
+      </div>
+    </div>
+    <div class="field" data-modes="CUSTOM">
+      <label>Rondes</label>
+      <div class="stepper">
+        <button data-field="sets" data-delta="-1">−</button>
+        <input id="f-sets" type="number" value="4">
+        <button data-field="sets" data-delta="1">+</button>
+      </div>
+    </div>
+    <div class="field" data-modes="CUSTOM">
+      <label>Rust / ronde (s)</label>
+      <div class="stepper">
+        <button data-field="restBetweenSets" data-delta="-5">−</button>
+        <input id="f-restBetweenSets" type="number" value="60">
+        <button data-field="restBetweenSets" data-delta="5">+</button>
+      </div>
+    </div>
+
+    <div class="field" data-modes="AMRAP">
+      <label>Duur (min)</label>
+      <div class="stepper">
+        <button data-field="amrapMinutes" data-delta="-1">−</button>
+        <input id="f-amrapMinutes" type="number" value="8">
+        <button data-field="amrapMinutes" data-delta="1">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn" id="resetBtn">RESET</button>
+    <button class="btn btn-primary" id="startBtn">▶ START</button>
+  </div>
+
+  <div class="footer">GRIT TIMER MODULE // BUILD LOCAL // GEEN DATA VERLAAT DEZE PAGINA</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- config state ----------
+  const cfg = {
+    mode:'CUSTOM',
+    prep:10,
+    emomSec:60, emomRounds:10,
+    tabataWork:20, tabataRest:10, tabataRounds:8,
+    work:45, rest:15, stations:5, sets:4, restBetweenSets:60,
+    amrapMinutes:8
+  };
+
+  const presets = {
+    hoofdblok:{mode:'CUSTOM', values:{prep:10, work:45, rest:15, stations:5, sets:4, restBetweenSets:60}, name:'HOOFDBLOK · 4 RONDES × 5 STATIONS'},
+    finisher:{mode:'AMRAP', values:{prep:10, amrapMinutes:8}, name:'FINISHER · AMRAP 8:00'},
+    tabata:{mode:'TABATA', values:{prep:10, tabataWork:20, tabataRest:10, tabataRounds:8}, name:'TABATA KLASSIEK · 20/10 × 8'},
+    emom10:{mode:'EMOM', values:{prep:10, emomSec:60, emomRounds:10}, name:'EMOM 10:00'}
+  };
+
+  // ---------- DOM refs ----------
+  const el = {
+    tabs: document.getElementById('tabs'),
+    config: document.getElementById('config'),
+    sessionName: document.getElementById('sessionName'),
+    phaseLabel: document.getElementById('phaseLabel'),
+    digits: document.getElementById('digits'),
+    context: document.getElementById('context'),
+    ring: document.getElementById('ring'),
+    startBtn: document.getElementById('startBtn'),
+    resetBtn: document.getElementById('resetBtn'),
+    soundBtn: document.getElementById('soundBtn'),
+    wakeBtn: document.getElementById('wakeBtn'),
+    roundRow: document.getElementById('roundRow'),
+    roundCount: document.getElementById('roundCount'),
+    addRoundBtn: document.getElementById('addRoundBtn'),
+    finishBtn: document.getElementById('finishBtn')
+  };
+
+  const RING_CIRC = 2 * Math.PI * 90;
+  document.documentElement.style.setProperty('--ring-circ', RING_CIRC.toFixed(2));
+
+  // ---------- sound ----------
+  let soundOn = true;
+  let actx = null;
+  function getCtx(){
+    if(!actx){
+      try{ actx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch(e){ actx = null; }
+    }
+    return actx;
+  }
+  function beep(freq, dur, type, vol, delay){
+    if(!soundOn) return;
+    const ctx = getCtx();
+    if(!ctx) return;
+    try{
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.value = freq;
+      gain.gain.value = vol || 0.2;
+      osc.connect(gain).connect(ctx.destination);
+      const t0 = ctx.currentTime + (delay||0);
+      osc.start(t0);
+      gain.gain.setValueAtTime(vol||0.2, t0);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.stop(t0 + dur + 0.03);
+    }catch(e){}
+  }
+  function tickSound(){ beep(880, 0.08, 'square', 0.15); }
+  function workSound(){ beep(1046, 0.15, 'sawtooth', 0.22); beep(1046, 0.15, 'sawtooth', 0.22, 0.18); }
+  function restSound(){ beep(440, 0.22, 'sine', 0.18); }
+  function doneSound(){ beep(523,0.15,'sine',0.22,0); beep(659,0.15,'sine',0.22,0.15); beep(784,0.3,'sine',0.25,0.3); }
+  el.soundBtn.addEventListener('click', ()=>{
+    soundOn = !soundOn;
+    el.soundBtn.classList.toggle('on', soundOn);
+    el.soundBtn.innerHTML = soundOn ? '&#128266;' : '&#128263;';
+  });
+
+  // ---------- wake lock (best effort) ----------
+  let wakeLock = null;
+  let wakeWanted = false;
+  async function requestWake(){
+    if(!('wakeLock' in navigator)) return;
+    try{
+      wakeLock = await navigator.wakeLock.request('screen');
+    }catch(e){ wakeLock = null; }
+  }
+  function releaseWake(){
+    if(wakeLock){ try{ wakeLock.release(); }catch(e){} wakeLock=null; }
+  }
+  el.wakeBtn.addEventListener('click', ()=>{
+    wakeWanted = !wakeWanted;
+    el.wakeBtn.classList.toggle('on', wakeWanted);
+    if(wakeWanted && engine.running) requestWake(); else releaseWake();
+  });
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'visible' && wakeWanted && engine.running) requestWake();
+  });
+
+  // ---------- optional persistence (best effort, never blocks) ----------
+  function saveConfig(){
+    try{
+      if(window.storage && window.storage.set){
+        window.storage.set('grit-timer-config', JSON.stringify(cfg), false);
+      }
+    }catch(e){}
+  }
+  function loadConfig(){
+    try{
+      if(window.storage && window.storage.get){
+        window.storage.get('grit-timer-config', false).then(res=>{
+          if(res && res.value){
+            const saved = JSON.parse(res.value);
+            Object.assign(cfg, saved);
+            syncFieldsFromCfg();
+            setMode(cfg.mode);
+          }
+        }).catch(()=>{});
+      }
+    }catch(e){}
+  }
+
+  // ---------- mode / field wiring ----------
+  function setMode(mode){
+    cfg.mode = mode;
+    [...el.tabs.children].forEach(t=> t.classList.toggle('active', t.dataset.mode===mode));
+    [...el.config.children].forEach(f=>{
+      const modes = f.dataset.modes.split(',');
+      f.dataset.hide = modes.includes(mode) ? "false" : "true";
+    });
+    const showRoundRow = (mode==='AMRAP' || mode==='FORTIME');
+    el.roundRow.dataset.hide = engine.running || engine.done ? (showRoundRow?"false":"true") : "true";
+    el.finishBtn.dataset.hide = (mode==='FORTIME') ? "false" : "true";
+    if(!engine.running && !engine.done){
+      el.context.textContent = contextHintFor(mode);
+    }
+  }
+  function contextHintFor(mode){
+    switch(mode){
+      case 'EMOM': return 'Elke ronde start op de minuut · doe reps, rust de rest';
+      case 'TABATA': return '20 sec werk / 10 sec rust — klassiek';
+      case 'AMRAP': return 'Zoveel mogelijk ronden in de tijd — tik +1 ronde per volledige ronde';
+      case 'FORTIME': return 'Tel op tot je klaar bent — druk KLAAR bij afronden';
+      default: return 'Rondes × stations, met wissel- en rondepauzes';
+    }
+  }
+  el.tabs.addEventListener('click', e=>{
+    const t = e.target.closest('.tab');
+    if(!t || engine.running) return;
+    setMode(t.dataset.mode);
+    el.sessionName.textContent = t.dataset.mode + ' · CUSTOM';
+  });
+
+  function syncFieldsFromCfg(){
+    Object.keys(cfg).forEach(k=>{
+      const input = document.getElementById('f-'+k);
+      if(input) input.value = cfg[k];
+    });
+  }
+  el.config.addEventListener('click', e=>{
+    const b = e.target.closest('button[data-field]');
+    if(!b || engine.running) return;
+    const field = b.dataset.field;
+    const delta = parseInt(b.dataset.delta, 10);
+    const input = document.getElementById('f-'+field);
+    let val = parseInt(input.value,10) || 0;
+    val = Math.max(0, val + delta);
+    input.value = val;
+    cfg[field] = val;
+  });
+  el.config.addEventListener('change', e=>{
+    const input = e.target.closest('input[type=number]');
+    if(!input) return;
+    const field = input.id.replace('f-','');
+    cfg[field] = Math.max(0, parseInt(input.value,10) || 0);
+  });
+
+  document.querySelectorAll('.chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      if(engine.running) return;
+      const p = presets[chip.dataset.preset];
+      if(!p) return;
+      Object.assign(cfg, p.values);
+      cfg.mode = p.mode;
+      syncFieldsFromCfg();
+      setMode(p.mode);
+      el.sessionName.textContent = p.name;
+    });
+  });
+
+  // ---------- queue builders ----------
+  function buildQueue(){
+    const q = [];
+    if(cfg.prep > 0){
+      q.push({type:'PREP', duration:cfg.prep, context:'KLAARMAKEN'});
+    }
+    if(cfg.mode === 'EMOM'){
+      for(let i=1;i<=cfg.emomRounds;i++){
+        q.push({type:'WORK', duration:cfg.emomSec, context:`RONDE ${i}/${cfg.emomRounds}`});
+      }
+    } else if(cfg.mode === 'TABATA'){
+      for(let i=1;i<=cfg.tabataRounds;i++){
+        q.push({type:'WORK', duration:cfg.tabataWork, context:`RONDE ${i}/${cfg.tabataRounds}`});
+        if(i < cfg.tabataRounds){
+          q.push({type:'REST', duration:cfg.tabataRest, context:'RUST'});
+        }
+      }
+    } else if(cfg.mode === 'CUSTOM'){
+      for(let s=1;s<=cfg.sets;s++){
+        for(let st=1;st<=cfg.stations;st++){
+          q.push({type:'WORK', duration:cfg.work, context:`RONDE ${s}/${cfg.sets} · STATION ${st}/${cfg.stations}`});
+          if(st < cfg.stations){
+            q.push({type:'REST', duration:cfg.rest, context:'WISSEL'});
+          }
+        }
+        if(s < cfg.sets){
+          q.push({type:'REST', duration:cfg.restBetweenSets, context:'RONDE RUST'});
+        }
+      }
+    } else if(cfg.mode === 'AMRAP'){
+      q.push({type:'WORK', duration:cfg.amrapMinutes*60, context:'AMRAP — TIK RONDES AF'});
+    }
+    return q;
+  }
+
+  // ---------- engine ----------
+  const engine = {
+    queue:[], idx:-1, phase:null,
+    phaseEndAt:0, remainingMs:0,
+    running:false, paused:false, done:false,
+    lastWholeSecond:null,
+    manualRounds:0,
+    forTimeStart:0, forTimeElapsed:0, inForTimeCount:false,
+    raf:null
+  };
+
+  function fmt(ms){
+    const totalSec = Math.max(0, Math.ceil(ms/1000));
+    const m = Math.floor(totalSec/60);
+    const s = totalSec%60;
+    return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  }
+  function fmtUp(ms){
+    const totalSec = Math.max(0, Math.floor(ms/1000));
+    const m = Math.floor(totalSec/60);
+    const s = totalSec%60;
+    return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  }
+
+  function setPhaseColor(type){
+    let c = 'var(--c-idle)';
+    if(type==='PREP') c = 'var(--c-prep)';
+    else if(type==='WORK') c = 'var(--c-work)';
+    else if(type==='REST') c = 'var(--c-rest)';
+    else if(type==='DONE') c = 'var(--c-done)';
+    document.documentElement.style.setProperty('--phase-color', c);
+  }
+  function labelFor(type){
+    if(type==='PREP') return 'KLAARMAKEN';
+    if(type==='WORK') return cfg.mode==='AMRAP' ? 'AMRAP' : 'WERK';
+    if(type==='REST') return 'RUST';
+    if(type==='DONE') return 'VOLTOOID';
+    return '';
+  }
+
+  function startSession(){
+    if(engine.running && !engine.paused){ return; }
+    if(engine.paused){
+      // resume
+      engine.paused = false;
+      if(engine.inForTimeCount){
+        engine.forTimeStart = performance.now() - engine.forTimeElapsed;
+      } else {
+        engine.phaseEndAt = performance.now() + engine.remainingMs;
+      }
+      el.startBtn.textContent = '❚❚ PAUZE';
+      el.startBtn.classList.add('running');
+      if(wakeWanted) requestWake();
+      loop();
+      return;
+    }
+    // fresh start
+    engine.queue = buildQueue();
+    engine.idx = -1;
+    engine.done = false;
+    engine.manualRounds = 0;
+    engine.forTimeElapsed = 0;
+    engine.inForTimeCount = false;
+    el.roundCount.textContent = '0';
+    const showRoundRow = (cfg.mode==='AMRAP' || cfg.mode==='FORTIME');
+    el.roundRow.dataset.hide = showRoundRow ? "false" : "true";
+    el.finishBtn.dataset.hide = (cfg.mode==='FORTIME') ? "false" : "true";
+    engine.running = true;
+    engine.paused = false;
+    el.startBtn.textContent = '❚❚ PAUZE';
+    el.startBtn.classList.add('running');
+    saveConfig();
+    getCtx(); // unlock audio on user gesture
+    if(wakeWanted) requestWake();
+    advancePhase();
+    loop();
+  }
+
+  function pauseSession(){
+    engine.paused = true;
+    el.startBtn.textContent = '▶ VERDER';
+    el.startBtn.classList.remove('running');
+    if(engine.raf) cancelAnimationFrame(engine.raf);
+    if(engine.inForTimeCount){
+      engine.forTimeElapsed = performance.now() - engine.forTimeStart;
+    } else if(engine.phase){
+      engine.remainingMs = Math.max(0, engine.phaseEndAt - performance.now());
+    }
+  }
+
+  function resetSession(){
+    engine.running = false;
+    engine.paused = false;
+    engine.done = false;
+    engine.queue = [];
+    engine.idx = -1;
+    engine.phase = null;
+    engine.manualRounds = 0;
+    engine.inForTimeCount = false;
+    if(engine.raf) cancelAnimationFrame(engine.raf);
+    el.startBtn.textContent = '▶ START';
+    el.startBtn.classList.remove('running');
+    el.phaseLabel.textContent = 'KLAAR';
+    setPhaseColor(null);
+    el.ring.style.strokeDashoffset = RING_CIRC;
+    el.digits.textContent = cfg.mode==='FORTIME' ? '00:00' : fmt(0);
+    el.context.textContent = contextHintFor(cfg.mode);
+    el.roundRow.dataset.hide = "true";
+    releaseWake();
+  }
+
+  function advancePhase(){
+    engine.idx++;
+    if(engine.idx >= engine.queue.length){
+      // queue exhausted
+      if(cfg.mode === 'FORTIME'){
+        // move into open-ended count-up
+        engine.inForTimeCount = true;
+        engine.forTimeStart = performance.now();
+        engine.phase = {type:'FORTIME', context:'FOR TIME — TIK RONDES AF'};
+        el.phaseLabel.textContent = 'FOR TIME';
+        setPhaseColor('WORK');
+        el.context.textContent = engine.phase.context;
+        el.ring.style.strokeDashoffset = 0;
+        return;
+      }
+      finishSession();
+      return;
+    }
+    const phase = engine.queue[engine.idx];
+    engine.phase = phase;
+    engine.remainingMs = phase.duration*1000;
+    engine.phaseEndAt = performance.now() + engine.remainingMs;
+    engine.lastWholeSecond = null;
+    el.phaseLabel.textContent = labelFor(phase.type);
+    setPhaseColor(phase.type);
+    el.context.textContent = phase.context;
+    if(phase.type==='WORK') workSound();
+    else if(phase.type==='REST') restSound();
+  }
+
+  function finishSession(){
+    engine.running = false;
+    engine.done = true;
+    if(engine.raf) cancelAnimationFrame(engine.raf);
+    el.phaseLabel.textContent = 'VOLTOOID';
+    setPhaseColor('DONE');
+    el.ring.style.strokeDashoffset = 0;
+    el.digits.textContent = '✔';
+    el.startBtn.textContent = '▶ START';
+    el.startBtn.classList.remove('running');
+    doneSound();
+    releaseWake();
+    const roundsDone = engine.manualRounds;
+    if(cfg.mode==='AMRAP' || cfg.mode==='FORTIME'){
+      el.context.textContent = `SESSIE VOLTOOID · ${roundsDone} RONDE${roundsDone===1?'':'S'} GELOGD`;
+    } else {
+      el.context.textContent = 'SESSIE VOLTOOID · GOED GEDAAN';
+    }
+  }
+
+  function loop(){
+    if(!engine.running || engine.paused) return;
+    const now = performance.now();
+
+    if(engine.inForTimeCount){
+      const elapsed = now - engine.forTimeStart;
+      el.digits.textContent = fmtUp(elapsed);
+      el.ring.style.strokeDashoffset = 0;
+    } else if(engine.phase){
+      const remaining = Math.max(0, engine.phaseEndAt - now);
+      el.digits.textContent = fmt(remaining);
+      const frac = 1 - (remaining / (engine.phase.duration*1000));
+      el.ring.style.strokeDashoffset = (RING_CIRC * Math.max(0,Math.min(1,frac))).toFixed(2);
+
+      const wholeSec = Math.ceil(remaining/1000);
+      if(wholeSec !== engine.lastWholeSecond){
+        engine.lastWholeSecond = wholeSec;
+        if(wholeSec>0 && wholeSec<=3){
+          tickSound();
+          el.digits.classList.remove('pulse'); void el.digits.offsetWidth; el.digits.classList.add('pulse');
+        }
+      }
+      if(remaining <= 0){
+        advancePhase();
+      }
+    }
+    engine.raf = requestAnimationFrame(loop);
+  }
+
+  el.startBtn.addEventListener('click', ()=>{
+    if(!engine.running){ startSession(); }
+    else if(!engine.paused){ pauseSession(); }
+    else { startSession(); }
+  });
+  el.resetBtn.addEventListener('click', resetSession);
+
+  el.addRoundBtn.addEventListener('click', ()=>{
+    if(!engine.running || engine.paused) return;
+    engine.manualRounds++;
+    el.roundCount.textContent = engine.manualRounds;
+    beep(660,0.08,'square',0.15);
+  });
+  el.finishBtn.addEventListener('click', ()=>{
+    if(cfg.mode==='FORTIME' && engine.running){
+      finishSession();
+    }
+  });
+
+  // ---------- init ----------
+  syncFieldsFromCfg();
+  setMode(cfg.mode);
+  loadConfig();
+})();
+</script>
+</body>
+</html>
